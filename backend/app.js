@@ -5,7 +5,6 @@ const session = require('express-session');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const cors = require('cors');
-
 dotenv.config();
 connectDB();
 const app = express();

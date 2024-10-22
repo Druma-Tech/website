@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: drumawork-backend
+    ports:
+      - "5000:5000"  # Maps host port 5000 to container port 5000
+    volumes:
+      - ./backend:/usr/src/app
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb+srv://22322:22322@cluster0.gxqfr.mongodb.net/drumawork?retryWrites=true&w=majority
+      - JWT_SECRET=your_jwt_secret_key_here
+    depends_on:
+      - mongodb
+    networks:
+      - drumawork-network
+
+  frontend:
+    build: ./frontend
+    container_name: drumawork-frontend
+    ports:
+      - "3000:3000"  # Maps host port 3000 to container port 3000
+    volumes:
+      - ./frontend:/usr/src/app
+    depends_on:
+      - backend
+    networks:
+      - drumawork-network
+
+  mongodb:
+    image: mongo:latest
+    container_name: drumawork-mongodb
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    volumes:
+      - ./mongo-data:/data/db  # Persistent volume for MongoDB data
+    ports:
+      - "27017:27017"  # Maps MongoDB port to host
+    networks:
+      - drumawork-network
+
+networks:
+  drumawork-network:
+    driver: bridge
