@@ -1,4 +1,5 @@
 const User = require('../models/userModel');
+const Demo = require('../models/demoModel')
 const jwt = require('jsonwebtoken');
 
 const generateToken = (id) => {
@@ -28,6 +29,7 @@ const registerUser = async (req, res) => {
       phoneNumber,
       country,
       password,
+      secretKey: null,
     });
   
     if (user) {
@@ -63,4 +65,17 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, generateToken };
+const demoRequest = async (req,res) => {
+  const {contactName, companyName, email, phoneNumber, website, requestPurpose}= req.body;
+  const demoExists = await Demo.findOne({email});
+  if(demoExists){
+    return res.json({message:"You're already in the queue. We'll get back to you soon!"})
+  }
+  const demo= await Demo.create({
+    contactName, companyName, email, phoneNumber, website, requestPurpose
+  })
+  demo.save();
+  return res.json({message:"Request submitted successfully!"});
+}
+
+module.exports = { registerUser, loginUser, generateToken, demoRequest };

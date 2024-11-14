@@ -34,22 +34,40 @@ const verifyToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
+    console.log(req.user);
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid token' });
   }
 };
 
+const verifyAdmin = async(req,res,next)=>{
+  const token= req.headers['authorization']?.split(' ')[1];
+  if(!token){
+    return res.status(403).json({message: "Admin Access Denied."});
+  }
+  try{
+    const decoded=jwt.verify(token, process.env.JWT_SECRET);
+    req.user=decoded;
+    const user= await User.findById(req.user.id);
+    if(user.role=='admin'){
+      next();
+    }else{
+      return res.status(401).json({message:"Admins allowed only"});
+    }
+  }catch(err){
+    return res.status(401).json({message:"Invalid token"});
+  }
+}
+
 const validateSecretKey = async (req, res, next) => {
   const user = await User.findById(req.user.id);
-  const { secretkey } = req.headers;
+  const secretkey= user.secretKey;
   console.log('Received Secret Key:', secretkey);
-
   if (!secretkey || user.secretKey !== secretkey || user.secretKeyExpiry < Date.now()) {
       return res.status(403).json({ message: "Invalid or expired secret key." });
   }
   next();
 };
 
-
-module.exports = { protect, verifyToken, validateSecretKey };
+module.exports = { protect, verifyToken, validateSecretKey, verifyAdmin };

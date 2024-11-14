@@ -2,24 +2,26 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 
-const Dashboard = () => {
+interface User {
+    secretKey?: string;
+    credits?: number;
+}
+
+interface DashboardProps {
+    user: User;
+}
+
+const Dashboard = ({ user }: DashboardProps) => {
     const [credits, setCredits] = useState(0);
     const [message, setMessage] = useState('');
     const [isRunning, setIsRunning] = useState(false); // Track if the task is running
     const intervalIdRef = useRef<null | NodeJS.Timeout>(null); // useRef to persist interval ID across renders
     const location = useLocation();
-    const [secretKey, setSecretKey] = useState<string | null>(null);
-
     useEffect(() => {
         const query = new URLSearchParams(location.search);
         const token = query.get('token');
-
         if (token) {
             localStorage.setItem('token', token);
-        }
-
-        if(localStorage.getItem('secretKey')) {
-            setSecretKey(localStorage.getItem('secretKey'));
         }
     }, [location]);
 
@@ -37,42 +39,19 @@ const Dashboard = () => {
                 console.log(err);
             }
         };
-
         fetchUserCredits();
     }, []);
-
-    const generateSecretKey = async () => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await axios.post('http://localhost:5000/api/auth/generate-secret-key', {}, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            setSecretKey(response.data.secretKey);
-            if (response.data.secretKey) {
-                localStorage.setItem('secretKey', response.data.secretKey);
-            }
-            setMessage('Secret key generated. Use it for API requests.');
-        } catch (error) {
-            console.log('Error generating secret key:', error);
-            setMessage('Failed to generate secret key.');
-        }
-    };
 
     const handleApiCall = async (apiEndpoint: string) => {
         try {
             const token = localStorage.getItem('token');
-            const secretKey = localStorage.getItem('secretKey');
-
+            const secretKey = user?.secretKey;
+            console.log(user?.secretKey);
             if (!secretKey) {
                 setMessage('Please generate a secret key before using the API.');
                 return;
             }
-            const startingCredits = await axios.get('http://localhost:5000/api/auth/user/credits', {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
-
+            const startingCredits = user?.credits;
 
             const initialResponse = await axios.post(`http://localhost:5000/api/auth/${apiEndpoint}`, {}, {
                 headers: {
@@ -84,7 +63,7 @@ const Dashboard = () => {
             const remainingCredits = initialResponse.data.credits;
             setCredits(remainingCredits);
             console.log(remainingCredits, initialResponse.data.apiCredits);
-            if (startingCredits.data.credits < initialResponse.data.apiCredits) {
+            if (!startingCredits || startingCredits < initialResponse.data.apiCredits) {
                 setMessage('Not enough credits to start the task.');
                 return;
             } else {
@@ -150,18 +129,29 @@ const Dashboard = () => {
         }
     };
 
+    const rechargeCall = async (rechargeEndpoint: string) => {
+        const response = await axios.post(`http://localhost:5000/api/auth/${rechargeEndpoint}`, {}, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`,
+                secretKey: user?.secretKey,
+            },
+        });
+        // setCredits(response.data.credits);
+        console.log(response.data.credits);
+        setMessage('Credits recharged successfully.');
+    };
     return (
-        <div className="flex items-center justify-center h-screen bg-gray-100">
-            <div className="flex flex-col items-center p-8 space-y-6 bg-white shadow-lg rounded-lg max-w-md mx-auto">
+        <div className="flex flex-col items-center justify-center h-screen">
+            <div className="w-full max-w-md flex flex-col items-center p-8 space-y-6 bg-white shadow-lg rounded-lg mx-auto">
                 <h1 className="text-2xl font-semibold text-gray-800">
                     Available Credits: <span className="text-blue-600">{credits}</span>
                 </h1>
 
-                <div className="flex space-x-4">
+                <div className="flex space-x-4 w-full">
                     <button
                         onClick={() => handleApiCall('api1')}
                         disabled={isRunning || credits < 10}
-                        className={`px-4 py-2 text-white font-medium rounded-lg ${isRunning || credits < 10
+                        className={`w-full px-4 py-2 text-white font-medium rounded-lg ${isRunning || credits < 10
                             ? 'bg-gray-300 cursor-not-allowed'
                             : 'bg-blue-500 hover:bg-blue-600'
                             }`}
@@ -172,7 +162,7 @@ const Dashboard = () => {
                     <button
                         onClick={() => handleApiCall('api2')}
                         disabled={isRunning || credits < 20}
-                        className={`px-4 py-2 text-white font-medium rounded-lg ${isRunning || credits < 20
+                        className={`w-full px-4 py-2 text-white font-medium rounded-lg ${isRunning || credits < 20
                             ? 'bg-gray-300 cursor-not-allowed'
                             : 'bg-green-500 hover:bg-green-600'
                             }`}
@@ -181,28 +171,44 @@ const Dashboard = () => {
                     </button>
                 </div>
 
-                {isRunning && (
-                    <button
-                        onClick={stopTask}
-                        className="px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600"
-                    >
-                        Stop Task
-                    </button>
-                )}
-                {!secretKey && (<button
-                    onClick={generateSecretKey}
-                    className="px-4 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-600">
-                    Generate Secret Key
-                </button>)}
                 {message && (
                     <p className="mt-4 text-center text-gray-700 italic">
                         {message}
                     </p>
                 )}
+
+                {isRunning && (
+                    <button
+                        onClick={stopTask}
+                        className="w-full px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600"
+                    >
+                        Stop Task
+                    </button>
+                )}
             </div>
 
+            <div className="w-full max-w-md flex flex-col items-center p-8 space-y-6 bg-white shadow-lg rounded-lg mx-auto my-10">
+                <h1 className="text-2xl font-semibold text-gray-800">
+                    Recharge Credits
+                </h1>
+                <div className="flex space-x-4 w-full">
+                    <button
+                        onClick={() => rechargeCall('recharge1')}
+                        className="w-full px-4 py-2 text-white font-medium rounded-lg bg-blue-500 hover:bg-blue-600"
+                    >
+                        Recharge 100 credits
+                    </button>
+                    <button
+                        onClick={() => rechargeCall('recharge2')}
+                        className="w-full px-4 py-2 text-white font-medium rounded-lg bg-green-500 hover:bg-green-600"
+                    >
+                        Recharge 200 credits
+                    </button>
+                </div>
+            </div>
         </div>
-    );
+
+    )
 };
 
 export default Dashboard;

@@ -3,7 +3,9 @@ import './App.css'
 import Hero from './components/Hero'
 import SignUp from './components/SignUp'
 import Login from './components/Login'
-import Dashboard from "./components/Dashboard";
+import Landing from "./components/Landing";
+import Demo from "./components/Demo";
+import Admin from "./components/Admin";
 
 function App() {
   return (
@@ -12,7 +14,9 @@ function App() {
         <Route path="/" element={<Hero />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/landing" element={<Landing />} />
+        <Route path='/demo-request' element={<Demo />} />
+        <Route path='/admin' element={<Admin />} />
       </Routes>
     </BrowserRouter>
   )

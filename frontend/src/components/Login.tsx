@@ -20,7 +20,7 @@ function Login() {
             const response = await axios.post('http://localhost:5000/api/auth/login', { email, password });
             console.log('Login successful:', response.data);
             localStorage.setItem('token', response.data.token);
-            window.location.href = '/dashboard';
+            window.location.href = '/landing';
         } catch (error) {
             console.error('Error during login:', (error as any).response.data);
         }

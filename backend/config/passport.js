@@ -3,6 +3,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 // const MicrosoftStrategy = require('passport-microsoft').Strategy;
 // const AppleStrategy = require('passport-apple').Strategy;
 const User = require('../models/userModel');
+const Service = require('../models/serviceModel');
 require('dotenv').config();
 
 module.exports = (passport) => {
@@ -25,6 +26,17 @@ module.exports = (passport) => {
           username: profile.displayName,
         });
         await user.save();
+
+        await Service.create({
+          userId: user._id,
+          subscription: 'Basic',
+          subscriptionDetails: {
+            startDateTime: new Date(),
+            endDateTime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+          },
+          totalCost: 0,
+        });
+        
         return done(null, user);
       }
     }catch(err){

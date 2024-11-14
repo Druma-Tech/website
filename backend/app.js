@@ -5,6 +5,8 @@ const session = require('express-session');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const cors = require('cors');
+const resetExpiredSecretKeys = require('./models/resetExpiredSecretKeys');
+
 dotenv.config();
 connectDB();
 const app = express();
@@ -40,4 +42,4 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-
+resetExpiredSecretKeys();

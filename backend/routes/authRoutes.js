@@ -1,8 +1,10 @@
 const express = require('express');
 const passport = require('passport');
-const { registerUser, loginUser, generateToken } = require('../controllers/authController');
-const { useApiOne, useApiTwo, getUserCredits, generateSecretKey } = require('../controllers/userController');
-const {verifyToken, validateSecretKey} = require('../middleware/authMiddleware');
+const User = require('../models/userModel');
+const Service = require('../models/serviceModel');
+const { registerUser, loginUser, generateToken, demoRequest } = require('../controllers/authController');
+const { useApiOne, useApiTwo, getUserCredits, generateSecretKey, getSecretKey, recharge1, recharge2, fetchRequests, updateRequests } = require('../controllers/userController');
+const {verifyToken, validateSecretKey, verifyAdmin} = require('../middleware/authMiddleware');
 const router = express.Router();
 router.post('/signup', registerUser);
 
@@ -13,28 +15,7 @@ router.get('/google/callback', passport.authenticate('google', { failureRedirect
   (req, res) => {
     console.log(req.user);
     const token = generateToken(req.user._id);
-    res.redirect(`http://localhost:5173/dashboard?token=${token}`);
-  }
-);
-
-router.get('/facebook', passport.authenticate('facebook', { scope: ['email'] }));
-router.get('/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/' }),
-  (req, res) => {
-    res.redirect('/dashboard');
-  }
-);
-
-router.get('/microsoft', passport.authenticate('microsoft'));
-router.get('/microsoft/callback', passport.authenticate('microsoft', { failureRedirect: '/' }),
-  (req, res) => {
-    res.redirect('/dashboard');
-  }
-);
-
-router.get('/apple', passport.authenticate('apple'));
-router.get('/apple/callback', passport.authenticate('apple', { failureRedirect: '/' }),
-  (req, res) => {
-    res.redirect('/dashboard');
+    res.redirect(`http://localhost:5173/landing?token=${token}`);
   }
 );
 
@@ -46,7 +27,24 @@ router.get('/logout', (req, res) => {
 
 router.post('/api1', verifyToken, validateSecretKey ,useApiOne);
 router.post('/api2', verifyToken, validateSecretKey ,useApiTwo);
+
 router.get('/user/credits', verifyToken, getUserCredits);
+
 router.post('/generate-secret-key', verifyToken, generateSecretKey);
+router.get('/check-secret-key', verifyToken, getSecretKey);
+
+router.get('/userDetails', verifyToken, async(req, res) => {
+  const userId = req.user.id;
+  const user = await User.findById(userId);
+  const service = await Service.findOne({userId: userId});
+  return res.json({user, service});
+}); 
+
+router.post('/recharge1', verifyToken, validateSecretKey, recharge1);
+router.post('/recharge2', verifyToken, validateSecretKey, recharge2);
+
+router.post('/demo-request', demoRequest);
+router.get('/pending-requests', fetchRequests);
+router.put('/update-request-status', updateRequests);
 
 module.exports = router;

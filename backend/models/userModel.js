@@ -1,11 +1,12 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const Service = require('../models/serviceModel.js');
 
+// Define the user schema
 const userSchema = new mongoose.Schema({
   firstName: {
     type: String,
     required: function () {
-      // Required if the user is not signing up via Google SSO
       return !this.googleId;
     },
   },
@@ -41,14 +42,11 @@ const userSchema = new mongoose.Schema({
   },
   country: {
     type: String,
-    required: function () {
-      return !this.googleId;
-    },
   },
   password: {
     type: String,
     required: function () {
-      return !this.googleId;  // Password is required only for traditional signup
+      return !this.googleId;
     },
   },
   credits: {
@@ -60,6 +58,7 @@ const userSchema = new mongoose.Schema({
   },
   secretKey: { type: String, default: null },
   secretKeyExpiry: { type: Date, default: null },
+  role:{type:String, default:'user'}
 }, {
   timestamps: true,
 });
@@ -70,7 +69,6 @@ userSchema.pre('save', async function (next) {
     next();
   }
 
-  // Only hash the password if the user is not a Google user and password exists
   if (this.password) {
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
@@ -78,15 +76,13 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Match password for regular login (non-Google users)
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-// Static method to handle Google login
 userSchema.statics.findOrCreateGoogleUser = async function (profile) {
   let user = await this.findOne({ googleId: profile.id });
-
+  console.log("hey")
   if (!user) {
     user = await this.create({
       googleId: profile.id,
@@ -98,6 +94,22 @@ userSchema.statics.findOrCreateGoogleUser = async function (profile) {
       secretKey: null,
     });
   }
+
+  console.log(user._id);
+
+  await Service.create({
+    userId: user._id,
+    subscription: 'Basic',
+    subscriptionDetails: {
+      startDateTime: new Date(),
+      endDateTime: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+    },
+    servicesUsed: {
+      Api1: 0,
+      Api2: 0,
+    },
+    totalCost: 0,
+  });
 
   return user;
 };
