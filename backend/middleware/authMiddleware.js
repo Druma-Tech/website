@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
+const redisClient = require('../config/redis');
 
 const protect = async (req, res, next) => {
   let token;
@@ -34,7 +35,6 @@ const verifyToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded;
-    console.log(req.user);
     next();
   } catch (err) {
     return res.status(401).json({ message: 'Invalid token' });
@@ -61,13 +61,26 @@ const verifyAdmin = async(req,res,next)=>{
 }
 
 const validateSecretKey = async (req, res, next) => {
-  const user = await User.findById(req.user.id);
-  const secretkey= user.secretKey;
-  console.log('Received Secret Key:', secretkey);
-  if (!secretkey || user.secretKey !== secretkey || user.secretKeyExpiry < Date.now()) {
-      return res.status(403).json({ message: "Invalid or expired secret key." });
+  const userId = req.user.id;
+
+  try {
+    const cachedUser = await redisClient.get(`user:${userId}`);
+    let user;
+    if (cachedUser) {
+      user = JSON.parse(cachedUser);
+    } else {
+      user = await User.findById(userId);
+      await redisClient.setEx(`user:${userId}`, 3600, JSON.stringify(user));
+    }
+    const { secretKey, secretKeyExpiry } = user;
+    if (!secretKey || secretKeyExpiry < Date.now()) {
+      return res.status(403).json({ message: 'Invalid or expired secret key.' });
+    }
+    next();
+  } catch (error) {
+    console.error('Error validating secret key:', error);
+    res.status(500).json({ error: 'Server error' });
   }
-  next();
 };
 
 module.exports = { protect, verifyToken, validateSecretKey, verifyAdmin };

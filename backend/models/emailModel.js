@@ -35,4 +35,14 @@ const sendAcceptanceEmail = async (email, name) => {
     return { password };
 };
 
-module.exports = sendAcceptanceEmail;
+const sendRejectionEmail = async (email, name) => {
+    const mailOptions = {
+        from: 'hhrx0040@gmail.com',
+        to: email,
+        subject: 'Demo Request Rejected',
+        text: `Dear ${name},\n\nYour demo request has been rejected.\n\nBest Regards,\nTeam Druma`,
+    };
+    await transporter.sendMail(mailOptions);
+}
+
+module.exports = {sendAcceptanceEmail, sendRejectionEmail};

@@ -6,6 +6,7 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const cors = require('cors');
 const resetExpiredSecretKeys = require('./models/resetExpiredSecretKeys');
+const syncDatabase = require('./models/syncDatabase');
 
 dotenv.config();
 connectDB();
@@ -43,3 +44,4 @@ app.listen(PORT, () => {
 });
 
 resetExpiredSecretKeys();
+setInterval(syncDatabase, 1 * 60 * 1000); 

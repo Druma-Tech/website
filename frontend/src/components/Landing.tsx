@@ -34,6 +34,7 @@ export default function Landing() {
                         Authorization: `Bearer ${token}`,
                     },
                 });
+                console.log(response.data);
                 setUser(response.data.user);
                 setService(response.data.service);
             } catch (err) {
