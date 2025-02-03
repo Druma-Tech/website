@@ -6,6 +6,7 @@ import Login from './components/Login'
 import Landing from "./components/Landing";
 import Demo from "./components/Demo";
 import Admin from "./components/Admin";
+import InputOptions from "./components/InputOptions";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/landing" element={<Landing />} />
         <Route path='/demo-request' element={<Demo />} />
         <Route path='/admin' element={<Admin />} />
+        <Route path='/test' element={<InputOptions />} />
       </Routes>
     </BrowserRouter>
   )

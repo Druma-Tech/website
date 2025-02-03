@@ -4,7 +4,7 @@ const User = require('../models/userModel');
 const Service = require('../models/serviceModel');
 const redisClient = require('../config/redis');
 const { registerUser, loginUser, generateToken, demoRequest } = require('../controllers/authController');
-const { useApiOne, useApiTwo, getUserCredits, generateSecretKey, getSecretKey, recharge1, recharge2, fetchRequests, updateRequests } = require('../controllers/userController');
+const { useApiOne, useApiTwo, useApiThree ,getUserCredits, generateSecretKey, getSecretKey, recharge1, recharge2, fetchRequests, updateRequests } = require('../controllers/userController');
 const {verifyToken, validateSecretKey, verifyAdmin} = require('../middleware/authMiddleware');
 const router = express.Router();
 router.post('/signup', registerUser);
@@ -28,6 +28,7 @@ router.get('/logout', (req, res) => {
 
 router.post('/api1', verifyToken, validateSecretKey ,useApiOne);
 router.post('/api2', verifyToken, validateSecretKey ,useApiTwo);
+router.post('/api3', useApiThree);
 
 router.get('/user/credits', verifyToken, getUserCredits);
 

@@ -5,9 +5,11 @@ const Demo = require('../models/demoModel')
 const ApiOneCreditUsage = require('../services/api1');
 const ApiTwoCreditUsage = require('../services/api2');
 const crypto = require('crypto');
-const {sendAcceptanceEmail, sendRejectionEmail} = require('../models/emailModel');
+const { sendAcceptanceEmail, sendRejectionEmail } = require('../models/emailModel');
 const mongoose = require('mongoose');
 const redisClient = require('../config/redis');
+const fs = require('fs');
+const FormData = require('form-data');
 
 const useApiOne = async (req, res) => {
   try {
@@ -122,6 +124,25 @@ const useApiTwo = async (req, res) => {
   }
 };
 
+const useApiThree = async (req, res) => {
+  const form = new FormData();
+    form.append('api_name', req.body.api_name);
+    if (req.file) {
+        form.append('file', fs.createReadStream(req.file.path), req.file.filename);
+    }
+    axios.post('http://localhost:5001/api/call', form, {
+        headers: {
+            ...form.getHeaders() // Important to include form-data headers
+        }
+    })
+    .then(flaskResponse => {
+        res.status(200).json(flaskResponse.data);
+    })
+    .catch(error => {
+        console.error('Error communicating with Flask server:', error.message);
+        res.status(500).json({ error: 'Failed to perform task' });
+    });
+}
 
 
 const getUserCredits = async (req, res) => {
@@ -152,9 +173,9 @@ const generateSecretKey = async (req, res) => {
       const userData = JSON.parse(cachedUser);
       userData.secretKey = secretKey;
       userData.secretKeyExpiry = expiry;
-      await redisClient.setEx(`user:${userId}`, 3600*24*30, JSON.stringify(userData));
+      await redisClient.setEx(`user:${userId}`, 3600 * 24 * 30, JSON.stringify(userData));
     } else {
-      await redisClient.setEx(`user:${userId}:secretKey`, 3600*24*30, JSON.stringify({ secretKey, secretKeyExpiry: expiry }));
+      await redisClient.setEx(`user:${userId}:secretKey`, 3600 * 24 * 30, JSON.stringify({ secretKey, secretKeyExpiry: expiry }));
     }
     res.json({ secretKey });
   } catch (error) {
@@ -181,12 +202,12 @@ const recharge1 = async (req, res) => {
   if (cachedUser) {
     const userData = JSON.parse(cachedUser);
     userData.credits += 100;
-    await redisClient.setEx(`user:${userId}`, 3600*24*30, JSON.stringify(userData));
+    await redisClient.setEx(`user:${userId}`, 3600 * 24 * 30, JSON.stringify(userData));
     return res.json({ message: 'done recharge' });
   }
   const user = await User.findById(userId);
   user.credits += 100;
-  await redisClient.setEx(`user:${userId}`, 3600*24*30, JSON.stringify(user));
+  await redisClient.setEx(`user:${userId}`, 3600 * 24 * 30, JSON.stringify(user));
   return res.json({ message: 'done recharge' });
 }
 
@@ -196,12 +217,12 @@ const recharge2 = async (req, res) => {
   if (cachedUser) {
     const userData = JSON.parse(cachedUser);
     userData.credits += 200;
-    await redisClient.setEx(`user:${userId}`, 3600*24*30, JSON.stringify(userData));
+    await redisClient.setEx(`user:${userId}`, 3600 * 24 * 30, JSON.stringify(userData));
     return res.json({ message: 'done recharge' });
   }
   const user = await User.findById(userId);
   user.credits += 200;
-  await redisClient.setEx(`user:${userId}`, 3600*24*30, JSON.stringify(user));
+  await redisClient.setEx(`user:${userId}`, 3600 * 24 * 30, JSON.stringify(user));
   return res.json({ message: 'done recharge' });
 }
 
@@ -221,72 +242,21 @@ const fetchRequests = async (req, res) => {
   }
 };
 
-// const updateRequests = async (req, res) => {
-//   const { id, status } = req.body;
-//   try {
-//     console.log(id, status);
-//     const demo = await Demo.findById(id);
-
-//     const cachedDemoRequests = await redisClient.get('demoRequests:pending');
-//     if (cachedDemoRequests) {
-//       const parsedRequests = JSON.parse(cachedDemoRequests);
-//       if(status === 'accepted'){
-//         parsedRequests.filter((request) => request._id !== id);
-//       }
-//       else{
-//         parsedRequests.map((request) => {
-//           if(request._id === id){
-//             request.status = status;
-//           }
-//         });
-//       }
-//     }
-//     if (status === 'declined') {
-//       await Demo.findByIdAndUpdate(id, { status });
-//       await redisClient.del('demoRequests:pending');
-//       return res.json({ message: 'Request updated' });
-//     }
-
-//     const { password } = await sendAcceptanceEmail(demo.email, demo.contactName);
-//     await Demo.findByIdAndUpdate(id, { status });
-
-//     const user = await User.create({
-//       _id: new mongoose.Types.ObjectId(),
-//       firstName: demo.contactName,
-//       email: demo.email,
-//       lastName: demo.companyName,
-//       username: demo.email,
-//       country: 'India',
-//       password,
-//       phoneNumber: demo.phoneNumber,
-//     });
-//     await user.save();
-
-//     console.log(password);
-//     await redisClient.del('demoRequests:pending');
-
-//     res.json({ message: 'Request updated' });
-//   } catch (error) {
-//     console.error('Error updating demo request:', error);
-//     res.status(500).json({ error: 'Server error' });
-//   }
-// };
-
 const updateRequests = async (req, res) => {
   const { id, status } = req.body;
   console.log(id, status);
   try {
     const cachedRequest = await redisClient.get(`demo:${id}`);
-    if(cachedRequest){
-      const request= JSON.parse(cachedRequest);
-      if(status==='accepted'){
-        request.status='accepted';
+    if (cachedRequest) {
+      const request = JSON.parse(cachedRequest);
+      if (status === 'accepted') {
+        request.status = 'accepted';
         await sendAcceptanceEmail(request.email, request.contactName);
-      }else{
-        request.status='declined';
+      } else {
+        request.status = 'declined';
         await sendRejectionEmail(request.email, request.contactName);
       }
-      await redisClient.setEx(`demo:${id}`, 3600*24*30, JSON.stringify(request));
+      await redisClient.setEx(`demo:${id}`, 3600 * 24 * 30, JSON.stringify(request));
       return res.json({ message: 'Request updated' });
     }
   } catch (error) {
@@ -295,4 +265,4 @@ const updateRequests = async (req, res) => {
   }
 };
 
-module.exports = { useApiOne, useApiTwo, getUserCredits, generateSecretKey, getSecretKey, recharge1, recharge2, fetchRequests, updateRequests };
+module.exports = { useApiOne, useApiTwo, useApiThree, getUserCredits, generateSecretKey, getSecretKey, recharge1, recharge2, fetchRequests, updateRequests };

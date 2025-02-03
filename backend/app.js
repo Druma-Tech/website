@@ -44,4 +44,4 @@ app.listen(PORT, () => {
 });
 
 resetExpiredSecretKeys();
-setInterval(syncDatabase, 1 * 60 * 1000); 
+setInterval(syncDatabase, 1 * 60 * 1000 * 60); // Sync database every 1 hour

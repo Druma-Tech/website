@@ -1,10 +1,11 @@
 const { createClient } = require('redis');
 
 const client = createClient({
-    password: 'VvGC4zgvsl2e7j4BYctxCh2XD2oVN1i3',
+    username: 'default',
+    password: 'toG3PP1OZs8K5O3QbluOimVpiZMcjR11',
     socket: {
-        host: 'redis-11160.c212.ap-south-1-1.ec2.redns.redis-cloud.com',
-        port: 11160
+        host: 'redis-14534.c301.ap-south-1-1.ec2.redns.redis-cloud.com',
+        port: 14534
     }
 });
 
@@ -13,7 +14,7 @@ client.on('connect', () => {
 });
 
 client.on('error', (err) => {
-    console.error('Redis error:', err);
+    console.error('Redis error:', err.message);
   });
 
   (async () => {

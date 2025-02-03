@@ -169,6 +169,17 @@ const Dashboard = ({ user }: DashboardProps) => {
                     >
                         Use API Two (20 credits)
                     </button>
+
+                    <button
+                        onClick={() => window.location.href = 'test'}
+                        disabled={isRunning || credits < 20}
+                        className={`w-full px-4 py-2 text-white font-medium rounded-lg ${isRunning || credits < 20
+                            ? 'bg-gray-300 cursor-not-allowed'
+                            : 'bg-green-500 hover:bg-green-600'
+                            }`}
+                    >
+                        Use API Three (20 credits)
+                    </button>                    
                 </div>
 
                 {message && (
