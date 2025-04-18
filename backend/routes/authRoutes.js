@@ -36,6 +36,7 @@ router.post('/generate-secret-key', verifyToken, generateSecretKey);
 router.get('/check-secret-key', verifyToken, getSecretKey);
 
 router.get('/userDetails', verifyToken, async (req, res) => {
+  console.log('Fetching user details...');
   const userId = req.user.id;
   try {
     const cachedUser = await redisClient.get(`user:${userId}`);
@@ -50,7 +51,7 @@ router.get('/userDetails', verifyToken, async (req, res) => {
 
     const user = await User.findById(userId);
     const service = await Service.findOne({ userId: userId });
-
+    console.log('User:', user);
     await redisClient.setEx(`user:${userId}`, 3600, JSON.stringify(user));
     await redisClient.setEx(`service:${userId}`, 3600, JSON.stringify(service));
 

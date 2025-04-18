@@ -136,7 +136,6 @@ const Dashboard = ({ user }: DashboardProps) => {
                 secretKey: user?.secretKey,
             },
         });
-        // setCredits(response.data.credits);
         console.log(response.data.credits);
         setMessage('Credits recharged successfully.');
     };

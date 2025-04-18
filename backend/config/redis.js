@@ -1,12 +1,7 @@
 const { createClient } = require('redis');
 
 const client = createClient({
-    username: 'default',
-    password: 'toG3PP1OZs8K5O3QbluOimVpiZMcjR11',
-    socket: {
-        host: 'redis-14534.c301.ap-south-1-1.ec2.redns.redis-cloud.com',
-        port: 14534
-    }
+    url: "rediss://default:Ad-AAAIjcDFkYTdkZWY5ZTdjZGE0ZjdmOWY0YjExYmQxMGNmYjhlOHAxMA@intent-squid-57216.upstash.io:6379"
 });
 
 client.on('connect', () => {
@@ -15,11 +10,12 @@ client.on('connect', () => {
 
 client.on('error', (err) => {
     console.error('Redis error:', err.message);
-  });
+});
 
-  (async () => {
+(async () => {
     try {
         await client.connect(); // Ensure the client connects
+        console.log(await client.ping()); // Test connection
     } catch (error) {
         console.error('Redis connection error:', error);
     }

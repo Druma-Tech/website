@@ -111,6 +111,7 @@ export default function Landing() {
             <div className="flex gap-4 w-full pt-10 min-h-[200px] md:min-h-[300px] lg:min-h-[400px]">
                 <div className="bg-black text-white rounded-lg flex flex-col items-center w-1/2 pt-10 shadow-xl">
                     {user && <Dashboard user={user} />}
+                    {<h3 className="text-3xl font-extrabold">API Usage</h3>}
                 </div>
                 <div className="bg-gray-300 text-black rounded-lg flex flex-col items-center justify-center w-1/2 shadow-xl p-10">
                     <h3 className="text-3xl font-extrabold">Services Used</h3>
